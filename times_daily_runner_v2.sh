@@ -2,6 +2,18 @@
 set -Eeuo pipefail
 
 # === KONFIG ===
+
+ENV_FILE="/home/pelle_user/.env"
+
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+else
+  echo "Hittar inte env-fil: $ENV_FILE"
+  exit 1
+fi
+
 TARGET_HOUR=${TARGET_HOUR:-22}
 TARGET_MINUTE=${TARGET_MINUTE:-00}
 RUNNER="${RUNNER:-$HOME/run_times_epub_v3.sh}"
@@ -46,9 +58,9 @@ sleep_until() {
 
 run_once() {
   local attempt=1 rc
-  while (( attempt <= 5 )); do
+  while (( attempt <= 10 )); do
     log "▶️  Kör $RUNNER (försök #$attempt)…"
-    if "$RUNNER" >>"$LOG" 2>&1; then
+    if /bin/bash "$RUNNER" >>"$LOG" 2>&1; then
       log "✅ Körning klar."
       return 0
     fi
@@ -58,14 +70,20 @@ run_once() {
     sleep 15
   done
 
-  log "❌ Misslyckades fem gånger – skickar varning."
+  log "❌ Misslyckades tio gånger – skickar varning."
   # Varningsmejl (använder calibre-smtp som du redan har)
-  calibre-smtp "$ALERT_TO" "$ALERT_TO" \
-    "The Times misslyckades tre gånger" \
-    -r smtp.gmx.com --port 465 --encryption-method SSL \
-    -u "$GMX_USER" -p "${GMX_PASS:-}" \
-    --subject "The Times misslyckades fem gånger $(date '+%Y-%m-%d %H:%M')" \
-    --body "Se loggfilen: $LOG"
+  # calibre-smtp "$ALERT_TO" "$ALERT_TO" \
+  #  "The Times misslyckades tio gånger" \
+  #  -r smtp.gmx.com --port 465 --encryption-method SSL \
+  #  -u "$GMX_USER" -p "${GMX_PASS:-}" \
+  #  --subject "The Times misslyckades tio gånger $(date '+%Y-%m-%d %H:%M')" \
+  #  --body "Se loggfilen: $LOG"
+
+  echo "Se loggfilen: $LOG" | calibre-smtp "$GMX_USER" "$ALERT_TO" \
+  "The Times misslyckades tio gånger $(date '+%Y-%m-%d %H:%M')" \
+  -r smtp.gmx.com --port 465 --encryption-method SSL \
+  -u "$GMX_USER" -p "$GMX_PASS"
+
   return 1
 }
 
