@@ -46,6 +46,7 @@ REQUIREMENTS
 ====================================================================
 ssh root@95.111.204.220 # Log in to my Virtual Private Server from my laptop
 sudo /root/setup_pelle.sh # Does several setups like virtual Python environment, and changes user to pelle_user
+/home/pelle_user/times_daily_runner_v2.sh # Starts the scheduler script (Please do not use "sudo")
 
 tail -f ~/times_runner.log # See the log 'live'
 ~/kill_all_v2.sh # kills all running processes, if needed
